@@ -1,0 +1,27 @@
+# Built-in Android Studio / Intellij junk
+*.iml
+.gradle
+/local.properties
+local.properties
+.externalNativeBuild
+.cxx
+
+# Ignore the ENTIRE Idea IDE folder to stop tracking micro-settings
+.idea/
+
+# Hardware / Generated Output compiles
+/build
+/captures
+
+# Secret Keys & Signing Binaries
+flappybird_key
+*.jks
+*.keystore
+
+# Exclude compiled binaries from clogging git history
+*.apk
+*.aab
+
+# System files
+.DS_Store
+Thumbs.db

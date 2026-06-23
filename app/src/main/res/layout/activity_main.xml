@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainMenuLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_day">
+
+    <!-- Logo / Message banner -->
+    <ImageView
+        android:id="@+id/logoMessage"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="36dp"
+        android:src="@drawable/message" />
+
+    <!-- High Score display -->
+    <TextView
+        android:id="@+id/tvHighScore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/logoMessage"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="4dp"
+        android:text="HIGHEST SCORE: 0"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
+        android:letterSpacing="0.08"
+        android:shadowColor="#000000"
+        android:shadowDx="2"
+        android:shadowDy="2"
+        android:shadowRadius="2" />
+
+    <!-- Day / Night theme toggle -->
+    <LinearLayout
+        android:id="@+id/themeLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvHighScore"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="18dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="#44000000"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="☀"
+            android:textColor="#FFE066"
+            android:textSize="20sp" />
+
+        <Switch
+            android:id="@+id/switchTheme"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:trackTint="#70FFFFFF"
+            android:thumbTint="#FFFFFF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🌙"
+            android:textColor="#AACCFF"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <!-- Bird selector carousel -->
+    <LinearLayout
+        android:id="@+id/birdSelectorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/themeLayout"
+        android:layout_marginTop="28dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <!--
+            Pixel-style arrow buttons: white text on a dark semi-transparent panel,
+            no Material ripple tint, rounded corners to echo the chunky Flappy Bird UI.
+        -->
+        <Button
+            android:id="@+id/btnPrevBird"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:text="◀"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#CC4C3B0E"
+            android:stateListAnimator="@null"
+            android:elevation="0dp" />
+
+        <ImageView
+            android:id="@+id/imgBirdPreview"
+            android:layout_width="96dp"
+            android:layout_height="72dp"
+            android:layout_marginHorizontal="28dp"
+            android:src="@drawable/yellowbird_midflap"
+            android:scaleType="fitCenter" />
+
+        <Button
+            android:id="@+id/btnNextBird"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:text="▶"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#CC4C3B0E"
+            android:stateListAnimator="@null"
+            android:elevation="0dp" />
+    </LinearLayout>
+
+    <!-- Play button -->
+    <Button
+        android:id="@+id/btnPlay"
+        android:layout_width="200dp"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="56dp"
+        android:text="▶  PLAY"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
+        android:letterSpacing="0.1"
+        android:textColor="#3B2000"
+        android:backgroundTint="#F5C518"
+        android:stateListAnimator="@null"
+        android:elevation="0dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        tools:ignore="HardcodedText" />
+
+</RelativeLayout>
