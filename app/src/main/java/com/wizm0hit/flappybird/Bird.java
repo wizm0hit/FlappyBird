@@ -10,6 +10,12 @@ public class Bird {
     public final int GRAVITY = 2;
     public final int JUMP_STRENGTH = -24;
 
+    // v1.1.0 Rotation Mechanics
+    public float angle = 0f;
+    private static final float MAX_UPWARD_ANGLE = -20f;
+    private static final float MAX_DOWNWARD_ANGLE = 90f;
+    private static final float HANG_TIME_THRESHOLD = 5f;
+
     private Bitmap[] flapFrames = new Bitmap[3];
     private int currentFrame = 0;
     private int frameDelayCount = 0;
@@ -42,20 +48,37 @@ public class Bird {
         }
     }
 
-    public void update() {
+    public void update(boolean isDying) {
         velocity += GRAVITY;
         y += velocity;
 
-        // Dynamic Flapping Animation Cycle Logic
-        frameDelayCount++;
-        if (frameDelayCount > 4) { // Change wing frame every 4 updates
-            currentFrame = (currentFrame + 1) % 3;
-            frameDelayCount = 0;
+        // 1. Dynamic Flapping Animation Cycle Logic
+        if (!isDying) {
+            frameDelayCount++;
+            if (frameDelayCount > 4) {
+                currentFrame = (currentFrame + 1) % 3;
+                frameDelayCount = 0;
+            }
+        } else {
+            currentFrame = 1;
+        }
+
+        // 2. Smoothed Angular Momentum Calculation
+        if (velocity < 0) {
+            angle = MAX_UPWARD_ANGLE;
+        } else if (velocity > HANG_TIME_THRESHOLD) {
+            angle += 4.5f;
+            if (angle > MAX_DOWNWARD_ANGLE) {
+                angle = MAX_DOWNWARD_ANGLE;
+            }
+        } else {
+            angle = 0f;
         }
     }
 
     public void jump() {
         velocity = JUMP_STRENGTH;
+        angle = MAX_UPWARD_ANGLE;
     }
 
     public Bitmap getCurrentBitmap() {

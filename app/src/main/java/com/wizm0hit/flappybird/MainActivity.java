@@ -1,17 +1,16 @@
 package com.wizm0hit.flappybird;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.Switch;
 import android.widget.TextView;
+import androidx.appcompat.widget.AppCompatButton;
+import androidx.appcompat.widget.SwitchCompat;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     private int[] birdPreviews = {
             R.drawable.yellowbird_midflap,
@@ -24,7 +23,7 @@ public class MainActivity extends Activity {
     private RelativeLayout mainMenuLayout;
     private ImageView imgBirdPreview;
     private TextView tvHighScore;
-    private Switch switchTheme;
+    private SwitchCompat switchTheme;
     private SharedPreferences prefs;
 
     @Override
@@ -32,15 +31,17 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Typo fixed here:
         prefs = getSharedPreferences("FlappyBirdPrefs", MODE_PRIVATE);
 
         mainMenuLayout = findViewById(R.id.mainMenuLayout);
         imgBirdPreview = findViewById(R.id.imgBirdPreview);
         tvHighScore = findViewById(R.id.tvHighScore);
         switchTheme = findViewById(R.id.switchTheme);
-        Button btnPrevBird = findViewById(R.id.btnPrevBird);
-        Button btnNextBird = findViewById(R.id.btnNextBird);
-        Button btnPlay = findViewById(R.id.btnPlay);
+
+        AppCompatButton btnPrevBird = findViewById(R.id.btnPrevBird);
+        AppCompatButton btnNextBird = findViewById(R.id.btnNextBird);
+        AppCompatButton btnPlay = findViewById(R.id.btnPlay);
 
         boolean isDark = prefs.getBoolean("isDarkTheme", false);
         switchTheme.setChecked(isDark);

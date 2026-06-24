@@ -50,6 +50,16 @@ public class GameView extends View {
     private boolean layoutReady = false;
     private int screenW, screenH;
 
+    // v1.1.0 Death Sequence States
+    private boolean isDying = false;
+    private int deathPauseFramesCount = 0;
+    private static final int DEATH_PAUSE_DURATION = 15;
+
+    // v1.1.0 Variables
+    private float scoreScale = 1.0f;
+    private int shakeDuration = 0;
+    private final java.util.Random shakeRandom = new java.util.Random();
+
     // Audio Engine Variables
     private SoundPool soundPool;
     private int soundWing, soundPoint, soundHit, soundDie, soundSwoosh;
@@ -81,6 +91,11 @@ public class GameView extends View {
         }
 
         bird = new Bird(context, birdType, 200, 500);
+
+        android.graphics.Typeface pixelFont = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.pixeloperatorbold);
+        if (pixelFont != null) {
+            fallbackPaint.setTypeface(pixelFont);
+        }
 
         // Setup sound system
         initializeAudioEngine(context);
@@ -158,80 +173,144 @@ public class GameView extends View {
 
         if (!layoutReady) return;
 
+        // --- SCREEN SHAKE RENDERING ENGINE ---
+        canvas.save();
+        if (shakeDuration > 0) {
+            float intensity = (float) shakeDuration / 15f;
+            float offsetX = ((shakeRandom.nextFloat() * 30) - 15) * intensity;
+            float offsetY = ((shakeRandom.nextFloat() * 30) - 15) * intensity;
+
+            canvas.translate(offsetX, offsetY);
+            shakeDuration--;
+        }
+
         if (scaledBg != null) {
             canvas.drawBitmap(scaledBg, 0, 0, null);
         } else {
             canvas.drawColor(Color.parseColor("#70C5CE"));
         }
 
+        // --- SCORE SCALE ANIMATION TICKER ---
+        if (scoreScale > 1.0f) {
+            scoreScale -= 0.05f; // Smoothly shrink back down frame-by-frame
+            if (scoreScale < 1.0f) scoreScale = 1.0f;
+        }
+
+        // --- GAMEPLAY / PROGRESSION LOOP ---
         if (!gameOver) {
-            bird.update();
+            if (!isDying) {
+                bird.update(false);
 
-            boolean hitFloor   = bird.y > screenH - bird.getHeight();
-            boolean hitCeiling = bird.y < 0;
-            if (hitFloor || hitCeiling) {
-                playSound(soundHit, 2);
-                playSound(soundDie, 2);
-                triggerGameOver();
-                return;
-            }
-
-            canvas.drawBitmap(bird.getCurrentBitmap(), bird.x, bird.y, null);
-
-            for (Pipe pipe : pipes) {
-                pipe.update();
-
-                if (pipe.topPipeBitmap == null || pipe.bottomPipeBitmap == null)
-                    continue;
-
-                canvas.drawBitmap(pipe.topPipeBitmap,    pipe.x, pipe.topY,    null);
-                canvas.drawBitmap(pipe.bottomPipeBitmap, pipe.x, pipe.bottomY, null);
-
-                // Recycle off-screen pipes
-                if (pipe.x + pipe.getWidth() < 0) {
-                    pipe.x = screenW;
-                    pipe.selectRandomPipeAsset();
-
-                    // Track position of the other pipe on screen to keep ranges fair
-                    int activePipeOpeningY = -1;
-                    for (Pipe otherPipe : pipes) {
-                        if (otherPipe != pipe) {
-                            activePipeOpeningY = otherPipe.getOpeningY();
-                            break;
-                        }
-                    }
-
-                    pipe.resetPosition(screenH, activePipeOpeningY);
-
-                    score++;
-                    playSound(soundPoint, 1);
-                }
-
-                // Collisions
-                Rect birdRect = new Rect(
-                        bird.x + 10, bird.y + 10,
-                        bird.x + bird.getWidth()  - 10,
-                        bird.y + bird.getHeight() - 10);
-
-                Rect topRect = new Rect(
-                        pipe.x, pipe.topY,
-                        pipe.x + pipe.getWidth(),
-                        pipe.topY + pipe.topPipeBitmap.getHeight());
-
-                Rect botRect = new Rect(
-                        pipe.x, pipe.bottomY,
-                        pipe.x + pipe.getWidth(),
-                        pipe.bottomY + pipe.bottomPipeBitmap.getHeight());
-
-                if (Rect.intersects(birdRect, topRect) || Rect.intersects(birdRect, botRect)) {
+                // Floor/Ceiling crash check
+                boolean hitFloor   = bird.y > screenH - bird.getHeight();
+                boolean hitCeiling = bird.y < 0;
+                if (hitFloor || hitCeiling) {
                     playSound(soundHit, 2);
                     playSound(soundDie, 2);
                     triggerGameOver();
                     return;
                 }
+
+                // Update and recycle pipes
+                for (Pipe pipe : pipes) {
+                    pipe.update();
+
+                    if (pipe.topPipeBitmap == null || pipe.bottomPipeBitmap == null)
+                        continue;
+
+                    // Recycle off-screen pipes
+                    if (pipe.x + pipe.getWidth() < 0) {
+                        pipe.x = screenW;
+                        pipe.selectRandomPipeAsset();
+
+                        int activePipeOpeningY = -1;
+                        for (Pipe otherPipe : pipes) {
+                            if (otherPipe != pipe) {
+                                activePipeOpeningY = otherPipe.getOpeningY();
+                                break;
+                            }
+                        }
+
+                        pipe.resetPosition(screenH, activePipeOpeningY);
+
+                        score++;
+                        playSound(soundPoint, 1);
+                        scoreScale = 1.4f; // Pop score scale when passing pipe
+                    }
+
+                    // Check boundaries for pipe collisions
+                    Rect birdRect = new Rect(
+                            bird.x + 10, bird.y + 10,
+                            bird.x + bird.getWidth()  - 10,
+                            bird.y + bird.getHeight() - 10);
+
+                    Rect topRect = new Rect(
+                            pipe.x, pipe.topY,
+                            pipe.x + pipe.getWidth(),
+                            pipe.topY + pipe.topPipeBitmap.getHeight());
+
+                    Rect botRect = new Rect(
+                            pipe.x, pipe.bottomY,
+                            pipe.x + pipe.getWidth(),
+                            pipe.bottomY + pipe.bottomPipeBitmap.getHeight());
+
+                    if (Rect.intersects(birdRect, topRect) || Rect.intersects(birdRect, botRect)) {
+                        playSound(soundHit, 2);
+                        isDying = true; // Enter dramatic pause
+                        deathPauseFramesCount = 0;
+
+                        // Trigger screen shake duration (15 frames)
+                        shakeDuration = 15;
+
+                        // Trigger phone vibration hardware haptics
+                        android.os.Vibrator vibrator = (android.os.Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+                        if (vibrator != null && vibrator.hasVibrator()) {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                vibrator.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+                            } else {
+                                vibrator.vibrate(200);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // --- DEATH SEQUENCE ---
+                if (deathPauseFramesCount < DEATH_PAUSE_DURATION) {
+                    deathPauseFramesCount++;
+                } else {
+                    if (deathPauseFramesCount == DEATH_PAUSE_DURATION) {
+                        playSound(soundDie, 2);
+                        deathPauseFramesCount++;
+                        bird.velocity = 0; // Pure drop vertical force setup
+                    }
+                    bird.update(true);
+                }
+
+                // Hard ground collision stop
+                if (bird.y > screenH - bird.getHeight()) {
+                    triggerGameOver();
+                    return;
+                }
             }
 
+            // --- RENDER PIPES ---
+            for (Pipe pipe : pipes) {
+                if (pipe.topPipeBitmap != null && pipe.bottomPipeBitmap != null) {
+                    canvas.drawBitmap(pipe.topPipeBitmap, pipe.x, pipe.topY, null);
+                    canvas.drawBitmap(pipe.bottomPipeBitmap, pipe.x, pipe.bottomY, null);
+                }
+            }
+
+            // --- RENDER BIRD WITH CANVAS ROTATION ---
+            canvas.save();
+            float pivotX = bird.x + (bird.getWidth() / 2f);
+            float pivotY = bird.y + (bird.getHeight() / 2f);
+            canvas.rotate(bird.angle, pivotX, pivotY);
+            canvas.drawBitmap(bird.getCurrentBitmap(), bird.x, bird.y, null);
+            canvas.restore();
+
         } else {
+            // Game Over Banner state
             if (gameOverBitmap != null) {
                 float bx = (screenW - gameOverBitmap.getWidth())  / 2f;
                 float by = screenH * 0.40f;
@@ -243,29 +322,46 @@ public class GameView extends View {
                 canvas.drawText("GAME OVER", screenW / 2f, screenH * 0.45f, fallbackPaint);
             }
 
+            // --- TWEAK AND CRISPEN THESE LINES BELOW ---
             fallbackPaint.setColor(Color.WHITE);
-            fallbackPaint.setTextSize(42f);
+            fallbackPaint.setTextSize(54f); // Bumped up slightly from 42f for retro look
             fallbackPaint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText("tap to return", screenW / 2f, screenH * 0.60f, fallbackPaint);
+
+            // Optional: Adds a subtle retro black outline shadow
+            fallbackPaint.setShadowLayer(4f, 2f, 2f, Color.BLACK);
+
+            canvas.drawText("tap to return", screenW / 2f, screenH * 0.62f, fallbackPaint);
+
+            // Clear shadow layer so it doesn't leak into fallback score drawing text
+            fallbackPaint.clearShadowLayer();
         }
 
         drawScore(canvas);
+        canvas.restore(); // Closes screen shake engine save wrapper
     }
 
     private void drawScore(Canvas canvas) {
         String s = String.valueOf(score);
         int digitW = 65;
         int startX = (screenW - s.length() * digitW) / 2;
+        int startY = 150;
 
         for (int i = 0; i < s.length(); i++) {
             int digit = s.charAt(i) - '0';
             Bitmap sprite = (digit >= 0 && digit < 10) ? scoreDigits[digit] : null;
 
             if (sprite != null) {
-                canvas.drawBitmap(sprite, startX + i * digitW, 150, null);
+                float centerX = startX + (i * digitW) + (sprite.getWidth() / 2f);
+                float centerY = startY + (sprite.getHeight() / 2f);
+
+                canvas.save();
+                // Scale relative to the exact center of this specific digit
+                canvas.scale(scoreScale, scoreScale, centerX, centerY);
+                canvas.drawBitmap(sprite, startX + i * digitW, startY, null);
+                canvas.restore(); // MUST restore immediately after the specific save
             } else {
                 fallbackPaint.setColor(Color.WHITE);
-                fallbackPaint.setTextSize(80f);
+                fallbackPaint.setTextSize(80f * scoreScale);
                 fallbackPaint.setTextAlign(Paint.Align.LEFT);
                 canvas.drawText(String.valueOf(digit), startX + i * digitW, 220, fallbackPaint);
             }
@@ -290,10 +386,14 @@ public class GameView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             if (!gameOver) {
-                bird.jump();
-                playSound(soundWing, 1);
+                if (!isDying) {
+                    bird.jump();
+                    playSound(soundWing, 1);
+                }
             } else {
                 playSound(soundSwoosh, 1);
+                isDying = false;
+                deathPauseFramesCount = 0;
                 ((Activity) getContext()).finish();
             }
         }

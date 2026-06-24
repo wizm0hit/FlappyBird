@@ -17,7 +17,6 @@ public class GameActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // Capture settings passed from custom main setup menu
         String birdType = getIntent().getStringExtra("BIRD_TYPE");
         boolean isDark = getIntent().getBooleanExtra("IS_DARK", false);
 
